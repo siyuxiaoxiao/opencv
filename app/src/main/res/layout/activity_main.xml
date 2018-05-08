@@ -10,15 +10,21 @@
         <!--后摄像头预览-->
 
     <!---->
+    <ImageView android:id="@+id/iv_show_camera2_activity"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:layout_centerInParent="true"
+        android:scaleType="centerCrop" />
 
 
-    <SurfaceView
-        android:id="@+id/surfaceview1"
+    <com.example.siyux.opencv.BackCameraSurfaceView
+        android:id="@+id/backSurfaceview"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <SurfaceView
-        android:id="@+id/surfaceview2"
+    <com.example.siyux.opencv.FontCameraSurfaceView
+        android:id="@+id/fontSurfaceview"
         android:layout_width="186dp"
         android:layout_height="238dp"
         android:layout_marginStart="5dp"

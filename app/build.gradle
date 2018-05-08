@@ -13,8 +13,8 @@ android {
     buildToolsVersion "27.0.3"
     defaultConfig {
         applicationId "com.example.siyux.opencv"
-        minSdkVersion 23
-        targetSdkVersion 23
+        minSdkVersion 22
+        targetSdkVersion 25
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
