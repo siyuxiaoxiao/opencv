@@ -1,7 +1,13 @@
 package com.example.siyux.opencv;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.hardware.Camera;
+import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -13,7 +19,11 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -25,7 +35,7 @@ public class BackCameraSurfaceView extends SurfaceView implements SurfaceHolder.
     private Camera mCamera;
     private int mScreenWidth;
     private int mScreenHeight;
-    private Mat courImage;
+    private static Mat courImage;
 
 
     public BackCameraSurfaceView(Context context) {
@@ -72,6 +82,7 @@ public class BackCameraSurfaceView extends SurfaceView implements SurfaceHolder.
         }
 
     }
+
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         Log.i(TAG, "surfaceChanged");
@@ -80,6 +91,7 @@ public class BackCameraSurfaceView extends SurfaceView implements SurfaceHolder.
         mCamera.startPreview();
 
     }
+
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         Log.i(TAG, "surfaceDestroyed");
@@ -91,13 +103,14 @@ public class BackCameraSurfaceView extends SurfaceView implements SurfaceHolder.
     @Override
     public void onAutoFocus(boolean success, Camera Camera) {
         if (success) {
-            Log.i(TAG, "onAutoFocus success="+success);
+            Log.i(TAG, "onAutoFocus success=" + success);
         }
     }
+
     private Camera.ShutterCallback shutter = new Camera.ShutterCallback() {
         @Override
         public void onShutter() {
-            Log.i(TAG,"shutter");
+            Log.i(TAG, "shutter");
         }
     };
 
@@ -114,23 +127,55 @@ public class BackCameraSurfaceView extends SurfaceView implements SurfaceHolder.
 
         @Override
         public void onPictureTaken(byte[] data, Camera Camera) {
-            Log.e("error","后摄像头回掉成功");
-            int width =mCamera.getParameters().getPreviewSize().width;
-            int height = mCamera.getParameters().getPreviewSize().height;
-            Mat courImage = new Mat((int) (height * 1.5), width, CvType.CV_8UC1);
-            courImage.put(0, 0, data);
+            Log.e("error", "后摄像头回掉成功");
+            BufferedOutputStream bos = null;
+            Bitmap bm = null;
+
+
+            try {
+                // 获得图片
+                    bm = BitmapFactory.decodeByteArray(data, 0, data.length);
+
+                    Log.i(TAG, "Environment.getExternalStorageDirectory()=" + Environment.getDataDirectory().getPath());
+
+                    String filePath = "/data/data/com.example.siyux.opencv/" + "tar" + ".jpg";//照片保存路径
+                    Log.e("filepath",filePath);
+                    File file = new File(filePath);
+                    if (!file.exists()) {
+                        file.createNewFile();
+                    }
+                    bos = new BufferedOutputStream(new FileOutputStream(file));
+                    bm.compress(Bitmap.CompressFormat.JPEG, 100, bos);//将图片压缩到流中
+
+                Log.e("backpicFile",file.getAbsolutePath()+file.getName());
+
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    bos.flush();
+                    bos.close();//关闭
+                    bm.recycle();// 回收bitmap空间
+                    mCamera.stopPreview();// 关闭预览
+                    //mCamera.startPreview();// 开启预览
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
         }
     };
-    public Mat takePicture(){
+
+    public void takePicture() {
         //设置参数,并拍照
         setCameraParams(mCamera, mScreenWidth, mScreenHeight);
         // 当调用camera.takePiture方法后，camera关闭了预览，这时需要调用startPreview()来重新开启预览
         mCamera.takePicture(null, null, jpeg);
-        return  courImage;
     }
 
     private void setCameraParams(Camera camera, int width, int height) {
-        Log.i(TAG,"setCameraParams  width="+width+"  height="+height);
+        Log.i(TAG, "setCameraParams  width=" + width + "  height=" + height);
         Camera.Parameters parameters = mCamera.getParameters();
         // 获取摄像头支持的PictureSize列表
         List<Camera.Size> pictureSizeList = parameters.getSupportedPictureSizes();
@@ -147,8 +192,8 @@ public class BackCameraSurfaceView extends SurfaceView implements SurfaceHolder.
         // 根据选出的PictureSize重新设置SurfaceView大小
         float w = picSize.width;
         float h = picSize.height;
-        parameters.setPictureSize(picSize.width,picSize.height);
-        this.setLayoutParams(new FrameLayout.LayoutParams((int) (height*(h/w)), height));
+        parameters.setPictureSize(picSize.width, picSize.height);
+        this.setLayoutParams(new FrameLayout.LayoutParams((int) (height * (h / w)), height));
 
         // 获取摄像头支持的PreviewSize列表
         List<Camera.Size> previewSizeList = parameters.getSupportedPreviewSizes();

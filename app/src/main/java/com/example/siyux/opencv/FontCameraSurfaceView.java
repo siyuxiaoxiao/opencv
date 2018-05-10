@@ -1,7 +1,10 @@
 package com.example.siyux.opencv;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.hardware.Camera;
+import android.os.Environment;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -10,6 +13,9 @@ import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -111,7 +117,41 @@ public class FontCameraSurfaceView extends SurfaceView implements SurfaceHolder.
         @Override
         public void onPictureTaken(byte[] data, Camera Camera) {
             Log.e("error","前摄像头回掉成功");
+            BufferedOutputStream bos = null;
+            Bitmap bm = null;
 
+
+            try {
+                // 获得图片
+                bm = BitmapFactory.decodeByteArray(data, 0, data.length);
+
+                Log.i(TAG, "Environment.getExternalStorageDirectory()=" + Environment.getDataDirectory().getPath());
+
+                String filePath = "/data/data/com.example.siyux.opencv/" + "sour" + ".jpg";//照片保存路径
+                Log.e("filepath",filePath);
+                File file = new File(filePath);
+                if (!file.exists()) {
+                    file.createNewFile();
+                }
+                bos = new BufferedOutputStream(new FileOutputStream(file));
+                bm.compress(Bitmap.CompressFormat.JPEG, 100, bos);//将图片压缩到流中
+                bos.flush();
+                Log.e("fontpicFile",file.getAbsolutePath()+file.getName());
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    bos.flush();
+                    bos.close();//关闭
+                    bm.recycle();// 回收bitmap空间
+                    mCamera.stopPreview();// 关闭预览
+                    //mCamera.startPreview();// 开启预览
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
         }
     };
     public void takePicture(){
